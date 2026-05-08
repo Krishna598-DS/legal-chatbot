@@ -1,0 +1,21 @@
+services:
+  - type: web
+    name: legal-chatbot-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn src.api.main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: LANGCHAIN_API_KEY
+        sync: false
+      - key: LANGCHAIN_TRACING_V2
+        value: true
+      - key: LANGCHAIN_PROJECT
+        value: legal-chatbot
+      - key: APP_ENV
+        value: production
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: FINE_TUNED_MODEL
+        value: ft:gpt-4o-mini-2024-07-18:personal:legal-chatbot:Dd52Ybnu
