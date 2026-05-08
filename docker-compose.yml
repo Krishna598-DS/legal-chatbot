@@ -1,0 +1,65 @@
+# Docker Compose v3.8 — production-ready configuration
+version: '3.8'
+
+services:
+
+  # ============================================================
+  # FastAPI Service
+  # ============================================================
+  api:
+    build:
+      context: .                        # Build from root Dockerfile
+      dockerfile: Dockerfile
+    container_name: legal-chatbot-api
+    ports:
+      - "8000:8000"                     # host:container port mapping
+    environment:
+      # These override the ENV defaults in Dockerfile
+      # Values come from your .env file via the env_file directive
+      - APP_ENV=production
+      - LOG_LEVEL=INFO
+    env_file:
+      - .env                            # Loads all variables from .env
+    volumes:
+      - ./models:/app/models            # Mount models folder so container
+      - ./logs:/app/logs                # sees your fine_tuned_model.json
+      - ./mlflow_runs:/app/mlflow_runs
+    restart: unless-stopped             # Auto-restart if it crashes
+    healthcheck:
+      test: ["CMD", "python", "-c", 
+             "import urllib.request; urllib.request.urlopen('http://localhost:8000/health')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+    networks:
+      - legal-chatbot-network
+
+  # ============================================================
+  # Streamlit Service
+  # ============================================================
+  ui:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.streamlit
+    container_name: legal-chatbot-ui
+    ports:
+      - "8501:8501"
+    environment:
+      - API_BASE_URL=http://api:8000    # Uses Docker network name, not localhost
+    env_file:
+      - .env
+    depends_on:
+      api:
+        condition: service_healthy      # Wait for API to be healthy before starting UI
+    restart: unless-stopped
+    networks:
+      - legal-chatbot-network
+
+# ============================================================
+# Network — containers talk to each other by service name
+# 'api' resolves to the FastAPI container's IP automatically
+# ============================================================
+networks:
+  legal-chatbot-network:
+    driver: bridge

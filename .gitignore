@@ -1,0 +1,19 @@
+# Never commit these
+.env
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+
+# Large files
+data/raw/
+mlflow_runs/
+logs/
+*.log
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Docker
+.dockerignore
